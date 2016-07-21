@@ -3,11 +3,12 @@
     <io_devices tag="IO Devices">
         <iodevice type="mouse_input" tag="Mouse Input Device" mouse_position_x="eye_x" mouse_position_y="eye_y" mouse_down="mouse_click" hide_cursor="NO"></iodevice>
         <iodevice tag="Fake Monkey" spike_rate="" priority="" type="fake_monkey" alt="">
-            <iochannel tag="Juice" variable="" type="juice"></iochannel>
+            <iochannel tag="Juice" variable="reward" type="juice"></iochannel>
         </iodevice>
     </io_devices>
     <variables tag="Variables">
         <folder tag="fixation">
+            <variable tag="wait_fixation_time" scope="global" logging="when_changed" exclude_from_data_file="NO" default_value="5000" type="integer"></variable>
             <variable tag="fixation_duration" scope="global" logging="when_changed" exclude_from_data_file="NO" default_value="1000" type="float"></variable>
             <variable tag="eye_in_window" scope="global" logging="when_changed" exclude_from_data_file="NO" default_value="0" type="integer"></variable>
             <variable tag="fix_window" scope="global" logging="when_changed" exclude_from_data_file="NO" default_value="1" type="float"></variable>
@@ -24,7 +25,14 @@
             <variable tag="checkerboard_size" scope="global" logging="when_changed" exclude_from_data_file="NO" default_value="20" type="float"></variable>
         </folder>
         <folder tag="trial">
-            <variable tag="consecutive_correct" scope="global" logging="when_changed" exclude_from_data_file="NO" default_value="0" type="integer"></variable>
+            <variable tag="failed" scope="global" logging="when_changed" exclude_from_data_file="NO" default_value="0" type="integer"></variable>
+            <variable type="selection" tag="meridian_selector" values="0,1" selection="sequential" nsamples="1" sampling_method="cycles" advance_on_accept="YES" autoreset="YES"></variable>
+            <variable tag="reward" scope="global" logging="when_changed" exclude_from_data_file="NO" default_value="0" type="any"></variable>
+            <variable tag="success" scope="global" logging="when_changed" exclude_from_data_file="NO" default_value="0" type="integer"></variable>
+            <variable tag="ignore" scope="global" logging="when_changed" exclude_from_data_file="NO" default_value="0" type="integer"></variable>
+            <variable tag="nBreakFix" scope="global" logging="when_changed" exclude_from_data_file="NO" default_value="0" type="any"></variable>
+            <variable tag="nConsecutiveCorrect" scope="global" logging="when_changed" exclude_from_data_file="NO" default_value="0" type="integer"></variable>
+            <variable tag="reward_duration" scope="global" logging="when_changed" exclude_from_data_file="NO" default_value="0" type="any"></variable>
             <variable tag="trial_duration" scope="global" logging="when_changed" exclude_from_data_file="NO" default_value="30" type="float"></variable>
         </folder>
     </variables>
@@ -44,30 +52,54 @@
     <optimizers tag="Optimizers"></optimizers>
     <experiment tag="checkerboard_mapping" full_name="HM/VM checkerboard mapping" description="">
         <protocol tag="Mapping" nsamples="1" sampling_method="cycles" selection="random_without_replacement" interruptible="YES">
-            <trial tag="HM" nsamples="1" sampling_method="cycles" selection="sequential" interruptible="YES">
-                <task_system tag="New Task System" interruptible="YES">
-                    <task_system_state tag="Give reward" interruptible="YES">
+            <trial tag="Stimulate at meridian" nsamples="50" sampling_method="cycles" selection="sequential" interruptible="YES">
+                <task_system tag="Keep fixation task system" interruptible="YES">
+                    <task_system_state tag="Initialize stimuli and IO" interruptible="YES">
                         <action_marker _unmoveable="1" tag="Actions"></action_marker>
-                        <transition_marker _unmoveable="1" tag="Transitions"></transition_marker>
-                    </task_system_state>
-                    <task_system_state tag="Initialize stimuli" interruptible="YES">
-                        <action_marker _unmoveable="1" tag="Actions"></action_marker>
-                        <action tag="Start IO Device" type="start_device_IO" device="Mouse Input Device"></action>
+                        <action tag="Start mouse" type="start_device_IO" device="Mouse Input Device"></action>
                         <action tag="Queue rotating checkerboard" type="live_queue_stimulus" stimulus="frame_list"></action>
-                        <action tag="Queue wedge mask" type="live_queue_stimulus" stimulus="wedge_hm"></action>
+                        <action tag="Queue wedge mask" type="live_queue_stimulus" stimulus="wedges[meridian_selector]"></action>
                         <action tag="Queue fixation point" type="live_queue_stimulus" stimulus="fixation_point"></action>
                         <action tag="Update display" type="update_stimulus_display" predicted_output_time=""></action>
                         <action type="start_timer" tag="Start stimulus timer" timer="stimulus_duration" timebase="" duration="trial_duration" duration_units="s"></action>
                         <transition_marker _unmoveable="1" tag="Transitions"></transition_marker>
-                        <transition type="direct" tag="Always Go to ..." target="Reward while fixating"></transition>
+                        <transition type="direct" tag="Go to &quot;Wait for fixation&quot;" target="Wait for fixation"></transition>
                     </task_system_state>
-                    <task_system_state tag="Reward while fixating" interruptible="YES">
+                    <task_system_state tag="Wait for fixation" interruptible="YES">
                         <action_marker _unmoveable="1" tag="Actions"></action_marker>
-                        <action type="wait_for_condition" tag="Wait for fixation" condition="eye_in_window" timeout="" timeout_message="" stop_on_timeout="YES"></action>
-                        <action type="start_timer" tag="Start fixation timer" timer="fixation_duration" timebase="" duration="fixation_duration" duration_units="ms"></action>
+                        <action type="report" tag="Report waiting" message="*** WAITING FOR FIXATION ***"></action>
+                        <action type="wait_for_condition" tag="Wait for Condition" condition="eye_in_window == 1" timeout="wait_fixation_time" timeout_message="" stop_on_timeout="NO"></action>
                         <transition_marker _unmoveable="1" tag="Transitions"></transition_marker>
+                        <transition type="conditional" tag="After acquiring fixation go to &quot;Keep fixation&quot;" condition="eye_in_window == 1" target="Keep fixation"></transition>
+                        <transition type="timer_expired" tag="Switch stimulus after timer 1" target="Exit state system" timer="stimulus_duration"></transition>
                     </task_system_state>
-                    <task_system_state tag="Exit State System" interruptible="YES">
+                    <task_system_state tag="Keep fixation" interruptible="YES">
+                        <action_marker _unmoveable="1" tag="Actions"></action_marker>
+                        <action type="report" tag="Report keeping fixation" message="*** KEEPING FIXATION ***"></action>
+                        <action type="start_timer" tag="Start fixation timer" timer="fixation" timebase="" duration="fixation_duration" duration_units="ms"></action>
+                        <transition_marker _unmoveable="1" tag="Transitions"></transition_marker>
+                        <transition type="timer_expired" tag="Give reward after successful fixation" target="Give reward" timer="fixation"></transition>
+                        <transition type="conditional" tag="Go to &quot;Broke fixation&quot; after fixation break" condition="(eye_in_window == 0)" target="Broke fixation"></transition>
+                        <transition type="timer_expired" tag="Switch stimulus after timer 2" target="Exit state system" timer="stimulus_duration"></transition>
+                    </task_system_state>
+                    <task_system_state tag="Give reward" interruptible="YES">
+                        <action_marker _unmoveable="1" tag="Actions"></action_marker>
+                        <action type="pulse" tag="Pulse Variable" variable="reward" duration="reward_duration"></action>
+                        <action type="report" tag="Report keeping fixation 2" message="*** REWARD ***"></action>
+                        <action type="assignment" tag="Increase consecutive corrects" variable="nConsecutiveCorrect" value="nConsecutiveCorrect+1"></action>
+                        <action type="assignment" tag="Count success" variable="success" value="success+1"></action>
+                        <transition_marker _unmoveable="1" tag="Transitions"></transition_marker>
+                        <transition type="direct" tag="Go to &quot;Wait for fixation&quot;" target="Wait for fixation"></transition>
+                    </task_system_state>
+                    <task_system_state tag="Broke fixation" interruptible="YES">
+                        <action_marker _unmoveable="1" tag="Actions"></action_marker>
+                        <action type="assignment" tag="Assign Variable" variable="failed" value="failed+1"></action>
+                        <action type="assignment" tag="Reset consecutive corrects" variable="nConsecutiveCorrect" value="0"></action>
+                        <transition_marker _unmoveable="1" tag="Transitions"></transition_marker>
+                        <transition type="direct" tag="Go to &quot;Wait for fixation&quot;" target="Wait for fixation"></transition>
+                        <transition type="timer_expired" tag="Switch stimulus after timer 3" target="Exit state system" timer="stimulus_duration"></transition>
+                    </task_system_state>
+                    <task_system_state tag="Exit state system" interruptible="YES">
                         <action_marker _unmoveable="1" tag="Actions"></action_marker>
                         <action tag="Dequeue frame list" type="dequeue_stimulus" stimulus="frame_list"></action>
                         <action tag="Update display" type="update_stimulus_display" predicted_output_time=""></action>
