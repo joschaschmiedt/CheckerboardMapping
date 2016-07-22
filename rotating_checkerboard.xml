@@ -9,7 +9,7 @@
     <variables tag="Variables">
         <folder tag="fixation">
             <variable tag="wait_fixation_time" scope="global" logging="when_changed" exclude_from_data_file="NO" default_value="0.5" type="float"></variable>
-            <variable tag="fixation_duration" scope="global" logging="when_changed" exclude_from_data_file="NO" default_value="1000" type="float"></variable>
+            <variable tag="fixation_duration" scope="global" logging="when_changed" exclude_from_data_file="NO" default_value="2000" type="float"></variable>
             <variable tag="eye_in_window" scope="global" logging="when_changed" exclude_from_data_file="NO" default_value="0" type="integer"></variable>
             <variable tag="fix_window" scope="global" logging="when_changed" exclude_from_data_file="NO" default_value="1" type="float"></variable>
             <variable tag="eye_x" scope="global" logging="when_changed" exclude_from_data_file="NO" default_value="0" type="float"></variable>
@@ -31,8 +31,8 @@
             <variable tag="reward" scope="global" logging="when_changed" exclude_from_data_file="NO" default_value="0" type="any"></variable>
             <variable tag="success" scope="global" logging="when_changed" exclude_from_data_file="NO" default_value="0" type="integer"></variable>
             <variable tag="ignore" scope="global" logging="when_changed" exclude_from_data_file="NO" default_value="0" type="integer"></variable>
-            <variable tag="nBreakFix" scope="global" logging="when_changed" exclude_from_data_file="NO" default_value="0" type="any"></variable>
-            <variable tag="nConsecutiveCorrect" scope="global" logging="when_changed" exclude_from_data_file="NO" default_value="0" type="integer"></variable>
+            <variable tag="fixation_breaks" scope="global" logging="when_changed" exclude_from_data_file="NO" default_value="0" type="any"></variable>
+            <variable tag="consecutive_successes" scope="global" logging="when_changed" exclude_from_data_file="NO" default_value="0" type="integer"></variable>
             <variable tag="reward_duration" scope="global" logging="when_changed" exclude_from_data_file="NO" default_value="0" type="any"></variable>
             <variable tag="trial_duration" scope="global" logging="when_changed" exclude_from_data_file="NO" default_value="10" type="float"></variable>
         </folder>
@@ -92,7 +92,7 @@
                         <action_marker _unmoveable="1" tag="Actions"></action_marker>
                         <action type="pulse" tag="Pulse Variable" variable="reward" duration="reward_duration"></action>
                         <action type="report" tag="Report keeping fixation 2" message="*** REWARD ***"></action>
-                        <action type="assignment" tag="Increase consecutive corrects" variable="nConsecutiveCorrect" value="nConsecutiveCorrect+1"></action>
+                        <action type="assignment" tag="Increase consecutive corrects" variable="consecutive_successes" value="consecutive_successes"></action>
                         <action type="assignment" tag="Count success" variable="success" value="success+1"></action>
                         <transition_marker _unmoveable="1" tag="Transitions"></transition_marker>
                         <transition type="conditional" tag="If still fixating go to &quot;Keep fixation&quot;" condition="eye_in_window" target="Keep fixation"></transition>
@@ -101,8 +101,8 @@
                     <task_system_state tag="Broke fixation" interruptible="YES">
                         <action_marker _unmoveable="1" tag="Actions"></action_marker>
                         <action type="report" tag="Report" message="*** BROKE FIXATION ***"></action>
-                        <action type="assignment" tag="Assign Variable" variable="failed" value="failed+1"></action>
-                        <action type="assignment" tag="Reset consecutive corrects" variable="nConsecutiveCorrect" value="0"></action>
+                        <action type="assignment" tag="Count break fixations" variable="fixation_breaks" value="fixation_breaks+1"></action>
+                        <action type="assignment" tag="Reset consecutive corrects" variable="consecutive_successes" value="0"></action>
                         <action tag="Dequeue Stimulus" type="dequeue_stimulus" stimulus="fixation_point"></action>
                         <action tag="Update Stimulus Display 2" type="update_stimulus_display" predicted_output_time=""></action>
                         <transition_marker _unmoveable="1" tag="Transitions"></transition_marker>
