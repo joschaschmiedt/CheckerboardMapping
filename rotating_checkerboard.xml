@@ -7,6 +7,12 @@
         </iodevice>
     </io_devices>
     <variables tag="Variables">
+        <folder tag="reward">
+            <variable tag="reward_max" scope="global" logging="when_changed" exclude_from_data_file="NO" default_value="500" type="float"></variable>
+            <variable tag="reward_slope" scope="global" logging="when_changed" exclude_from_data_file="NO" default_value="50" type="float"></variable>
+            <variable tag="reward_min" scope="global" logging="when_changed" exclude_from_data_file="NO" default_value="100" type="float"></variable>
+            <variable tag="reward_duration" scope="global" logging="when_changed" exclude_from_data_file="NO" default_value="reward_min" type="float"></variable>
+        </folder>
         <folder tag="fixation">
             <variable tag="wait_fixation_time" scope="global" logging="when_changed" exclude_from_data_file="NO" default_value="0.5" type="float"></variable>
             <variable tag="fixation_duration" scope="global" logging="when_changed" exclude_from_data_file="NO" default_value="2000" type="float"></variable>
@@ -32,8 +38,7 @@
             <variable tag="success" scope="global" logging="when_changed" exclude_from_data_file="NO" default_value="0" type="integer"></variable>
             <variable tag="ignore" scope="global" logging="when_changed" exclude_from_data_file="NO" default_value="0" type="integer"></variable>
             <variable tag="fixation_breaks" scope="global" logging="when_changed" exclude_from_data_file="NO" default_value="0" type="any"></variable>
-            <variable tag="consecutive_successes" scope="global" logging="when_changed" exclude_from_data_file="NO" default_value="0" type="integer"></variable>
-            <variable tag="reward_duration" scope="global" logging="when_changed" exclude_from_data_file="NO" default_value="0" type="any"></variable>
+            <variable tag="consecutive_successes" scope="global" logging="when_changed" exclude_from_data_file="NO" default_value="0" type="float"></variable>
             <variable tag="trial_duration" scope="global" logging="when_changed" exclude_from_data_file="NO" default_value="10" type="float"></variable>
         </folder>
     </variables>
@@ -90,9 +95,10 @@
                     </task_system_state>
                     <task_system_state tag="Give reward" interruptible="YES">
                         <action_marker _unmoveable="1" tag="Actions"></action_marker>
+                        <action type="assignment" tag="Assign Variable" variable="reward_duration" value="min(reward_slope*consecutive_successes+reward_min, reward_max)"></action>
                         <action type="pulse" tag="Pulse Variable" variable="reward" duration="reward_duration"></action>
-                        <action type="report" tag="Report keeping fixation 2" message="*** REWARD ***"></action>
-                        <action type="assignment" tag="Increase consecutive corrects" variable="consecutive_successes" value="consecutive_successes"></action>
+                        <action type="report" tag="Report reward" message="*** REWARD=$reward_duration ***"></action>
+                        <action type="assignment" tag="Increase consecutive corrects" variable="consecutive_successes" value="consecutive_successes+1"></action>
                         <action type="assignment" tag="Count success" variable="success" value="success+1"></action>
                         <transition_marker _unmoveable="1" tag="Transitions"></transition_marker>
                         <transition type="conditional" tag="If still fixating go to &quot;Keep fixation&quot;" condition="eye_in_window" target="Keep fixation"></transition>
